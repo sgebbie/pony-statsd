@@ -1,0 +1,3 @@
+[submodule "bin/pony-watcher"]
+	path = bin/pony-watcher
+	url = git@github.com:sgebbie/pony-watcher.git
