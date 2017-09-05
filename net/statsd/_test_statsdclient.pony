@@ -21,10 +21,10 @@ class iso _TestMetricCreation is UnitTest
 
 actor StatsDClient
 
-	let count: Counter iso
-	let gauge: Gauge iso
-	let timer: Timer iso
-	let set: Set iso
+	let count: Counter val
+	let gauge: Gauge val
+	let timer: Timer val
+	let set: Set val
 
 	new create(statsd: StatsD val) =>
 		count = statsd.counter(where bucket="my.counter", initial_value=0, sample_ratio=1.0)
@@ -36,6 +36,6 @@ actor StatsDClient
  		count.now(513)
  		gauge.>inc(5).>dec(7).>set(500)
  		timer.>was(10,SECONDS).>ms(10).>nanos(1000).>micros(100).>sec(50).>min(10).>hr(5).>day(1)
- 		set.>add(5)
+ 		set.>add(5).>add(52)
 		
 
