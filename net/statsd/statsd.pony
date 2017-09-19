@@ -19,11 +19,10 @@ class val StatsD
 		(recover val Counter(_statsd, bucket, sample_ratio) end)
 			.>now(initial_value)
 
-	fun val timer(bucket: String,
-			initial_value: I64 = 0, time_unit: TimeUnit = MILLISECONDS,
+	fun val timer(bucket: String, time_unit: TimeUnit = MILLISECONDS,
 			sample_ratio: F32 = 0.0): Timer val^ =>
 		(recover val Timer(_statsd, bucket, time_unit, sample_ratio) end)
-			.>was(initial_value, time_unit)
+		// note, we don't record an initial value since this will skew the averages
 
 	fun val gauge(bucket: String,
 			initial_value: I64): Gauge val^ =>

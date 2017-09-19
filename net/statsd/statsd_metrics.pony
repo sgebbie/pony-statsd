@@ -1,4 +1,3 @@
-use "format"
 use col = "collections"
 
 /*
@@ -149,7 +148,7 @@ primitive StatsDFormat
 		// gauges
 		| (let b: String, let o: (GaugeSet) , let v: I64, _) if v >= 0 =>
 			recover val
-				let vs: String = Format.int[I64](v)
+				let vs: String = v.string()
 				let m: String ref = recover String(b.size() + vs.size() + 3) end
 				// let space: USize = m.space() // for debugging - test reservation
 				m.>append(b).>push(':').>append(vs).>push('|').>append(o.opcode())
@@ -157,7 +156,7 @@ primitive StatsDFormat
 			end
 		| (let b: String, let o: (GaugeSet) , let v: I64, _) if v < 0 =>
 			recover val
-				let vs: String = Format.int[I64](v)
+				let vs: String = v.string()
 				let m: String ref = recover String((2 * b.size()) + vs.size() + 8) end
 				// let space: USize = m.space() // for debugging - test reservation
 				m.>append(b).>append(":0|g\n")
@@ -167,7 +166,7 @@ primitive StatsDFormat
 
 		| (let b: String, let o: (GaugeInc | GaugeDec) , let v: I64, _) if v >= 0 =>
 			recover val
-				let vs: String = Format.int[I64](v)
+				let vs: String = v.string()
 				let m: String ref = recover String(b.size() + vs.size() + 4) end
 				// let space: USize = m.space() // for debugging - test reservation
 				m.>append(b).>push(':')
@@ -177,7 +176,7 @@ primitive StatsDFormat
 			end
 		| (let b: String, let o: (GaugeInc | GaugeDec) , let v: I64, _) if v < 0 =>
 			recover val
-				let vs: String = Format.int[I64](-v)
+				let vs: String = (-v).string()
 				let m: String ref = recover String(b.size() + vs.size() + 4) end
 				// let space: USize = m.space() // for debugging - test reservation
 				m.>append(b).>push(':')
@@ -189,7 +188,7 @@ primitive StatsDFormat
 		// timers and counters
 		| (let b: String, let o: (CounterAdd | TimerRecord) , let v: I64, let s: F32) if s == 0.0 =>
 			recover val
-				let vs: String = Format.int[I64](v)
+				let vs: String = v.string()
 				let os: String = o.opcode()
 				let m: String ref = recover String(b.size() + vs.size() + os.size() + 2) end
 				// let space: USize = m.space() // for debugging - test reservation
@@ -198,8 +197,8 @@ primitive StatsDFormat
 			end
 		| (let b: String, let o: (CounterAdd | TimerRecord) , let v: I64, let s: F32) if s != 0.0 =>
 			recover val
-				let vs: String = Format.int[I64](v)
-				let ss: String = Format.float[F32](s)
+				let vs: String = v.string()
+				let ss: String = s.string()
 				let os: String = o.opcode()
 				let m: String ref = recover String(b.size() + vs.size() + os.size() + ss.size() + 4) end
 				// let space: USize = m.space() // for debugging - test reservation
@@ -211,7 +210,7 @@ primitive StatsDFormat
 		// sets
 		| (let b: String, let o: (SetInclude) , let v: I64, _) =>
 			recover val
-				let vs: String = Format.int[I64](v)
+				let vs: String = v.string()
 				let m: String ref = recover String(b.size() + vs.size() + 3) end
 				// let space: USize = m.space() // for debugging - test reservation
 				m.>append(b).>push(':').>append(vs).>push('|').>append(op.opcode())
