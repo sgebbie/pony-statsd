@@ -1,4 +1,5 @@
 use "ponytest"
+use time = "time"
 
 actor StatsDClientTests is TestList
 
@@ -77,12 +78,13 @@ class iso _TestMetricAccumulate is UnitTest
 	fun apply(h: TestHelper) =>
 		h.long_test(1_000_000_000)
 		let acc: StatsDTransportArray = StatsDTransportArray
-		let statsd: StatsD = StatsD(StatsDAccumulator(where transport = acc))
+		let timers: time.Timers = time.Timers
+		let statsd: StatsD = StatsD(StatsDAccumulator(where transport = acc, timers = timers))
 		let client: StatsDClient = StatsDClient(statsd)
-		client.doStuff({()(h,acc,_stringeq) =>
-			statsd.flush({()(h,acc,_stringeq) =>
+		client.doStuff({()(h,acc,_stringeq,timers) =>
+			statsd.flush({()(h,acc,_stringeq,timers) =>
 				// (but we might still get a timing issue between updates and flush)
-				acc.snapshot({(lines: Array[String] iso)(h,_stringeq) =>
+				acc.snapshot({(lines: Array[String] iso)(h,_stringeq,timers) =>
 					let ll: Array[String] ref = consume lines
 					// for l in ll.values() do h.env.out.>write(">>").>write(l).>print("<<") end
 					h.assert_true(ll.contains("my.counter:513|c", _stringeq))
@@ -90,6 +92,7 @@ class iso _TestMetricAccumulate is UnitTest
 					h.assert_true(ll.contains("my.set:5|s", _stringeq))
 					h.assert_true(ll.contains("my.set:52|s", _stringeq))
 					h.assert_true(ll.contains("my.timer:13132501|ms", _stringeq)) // see _TestTimeAvg
+					timers.dispose()
 					h.complete(true)
 				} val)
 			} val)
