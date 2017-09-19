@@ -17,5 +17,9 @@ class iso _TestMetricTransmit is UnitTest
 	fun name(): String => "metric send"
 
 	fun apply(h: TestHelper) =>
+		// set up mock to receive UDP
+		// send metrics
+		// capture in mock
+		// test results
 		h.complete(true)
 

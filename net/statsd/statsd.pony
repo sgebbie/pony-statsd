@@ -13,6 +13,10 @@ Within a batch local aggregation can be performed up to a given resolution.
 
 // TODO make each bucket key Hashable and Equatable
 
+interface Bucket
+	fun bucket(): String
+	fun val flush()
+
 class val Counter
 """
 Count -
@@ -20,17 +24,20 @@ Count -
   "%s:%d|c|@%f" (bucket, value, sample-ratio)
 """
 
-	let _statsd: StatsD
+	let _statsd: StatsDAccumulator
 	let _bucket: String
 	let _samples: F32
 
-	new iso create(statsd: StatsD, bucket: String, sample_ratio: F32 = 0.0) =>
+	new iso create(statsd: StatsDAccumulator, stats_bucket: String, sample_ratio: F32 = 0.0) =>
 		_statsd = statsd
-		_bucket = bucket
+		_bucket = stats_bucket
 		_samples = sample_ratio
 
+	fun bucket(): String => _bucket
+	fun val flush() => _statsd._flush(this)
+
 	fun val now(value: I64) =>
-		None
+		_statsd._post_counter_add(this, value)
 
 class val Timer
 """
@@ -39,16 +46,19 @@ Duration -
   "%s:%d|ms|@%f" (bucket, value, sample-ratio)
 """
 
-	let _statsd: StatsD
+	let _statsd: StatsDAccumulator
 	let _bucket: String
 	let _samples: F32
 	let _time_unit: TimeUnit
 
-	new iso create(statsd: StatsD, bucket: String, time_unit: TimeUnit = MILLISECONDS, sample_ratio: F32 = 0.0) =>
+	new iso create(statsd: StatsDAccumulator, stats_bucket: String, time_unit: TimeUnit = MILLISECONDS, sample_ratio: F32 = 0.0) =>
 		_statsd = statsd
-		_bucket = bucket
+		_bucket = stats_bucket
 		_samples = sample_ratio
 		_time_unit = time_unit
+
+	fun bucket(): String => _bucket
+	fun val flush() => _statsd._flush(this)
 
 	fun val was(value: I64, unit: TimeUnit) =>
 		// convert to the the configured time unit
@@ -70,12 +80,15 @@ Gauge -
   "%s:-%d|g" (bucket, dec)
 """
 
-	let _statsd: StatsD
+	let _statsd: StatsDAccumulator
 	let _bucket: String
 
-	new iso create(statsd: StatsD, bucket: String) =>
+	new iso create(statsd: StatsDAccumulator, stats_bucket: String) =>
 		_statsd = statsd
-		_bucket = bucket
+		_bucket = stats_bucket
+
+	fun bucket(): String => _bucket
+	fun val flush() => _statsd._flush(this)
 
 	fun val inc(value: I64) =>
 		_statsd._post_gauge_inc(this, value)
@@ -92,52 +105,82 @@ Set -
   "%s:%d|s" (bucket, value)
 """
 
-	let _statsd: StatsD
+	let _statsd: StatsDAccumulator
 	let _bucket: String
 
-	new val create(statsd: StatsD, bucket: String) =>
+	new val create(statsd: StatsDAccumulator, stats_bucket: String) =>
 		_statsd = statsd
-		_bucket = bucket
+		_bucket = stats_bucket
+
+	fun bucket(): String => _bucket
+	fun val flush() => _statsd._flush(this)
 
 	fun val add(value: I64) =>
 		_statsd._post_set_add(this, value)
 
 type Metric is (Counter | Gauge | Timer | Set)
 
-actor StatsD
+primitive CounterAdd
+	fun opcode(): String => "c"
+	fun opprefix(): String => "c"
+primitive GaugeSet
+	fun opcode(): String => "g"
+	fun opprefix(): String => ""
+primitive GaugeInc
+	fun opcode(): String => "g"
+	fun opprefix(): String => "+"
+primitive GaugeDec
+	fun opcode(): String => "g"
+	fun opprefix(): String => "-"
+primitive TimerRecord
+	fun opcode(): String => "ms"
+	fun opprefix(): String => ""
+primitive SetInclude
+	fun opcode(): String => "s"
+	fun opprefix(): String => ""
 
-	let _gauges: col.Map[String,(Bool, I64)] // track the sum of 'inc/dec' and if 'set' was used
+type MetricOp is (CounterAdd | GaugeSet | GaugeInc | GaugeDec | TimerRecord | SetInclude)
+
+
+interface tag StatsDTransport
+	""" An emitter of metrics. """
+
+	be emit(bucket: String, op: MetricOp, value: I64, sample_ratio: F32 = 0.0) => None
+
+actor StatsDTransportNop is StatsDTransport
+
+
+actor StatsDAccumulator
+	""" An accumlator and aggregator of metrics metrics. """
+
+	let _flush_millis: U32 // time between flushing accumulated metrics to the transport layer
+	let _transport: StatsDTransport // gateway to transport data out to external tooling
+
+	let _gauges: col.Map[String,(Bool, I64)] // track the sum of 'inc/dec' and if 'set' was used (note, if negative after 'set' then we need to emit a "set to zero" before sending the decrement. But care must be taken to ensure that this is in the same packet so that we accidentally processs the set=0 after the decrement.
 	let _counters: col.Map[String,I64] // simply track the sum
 	let _timers: col.Map[String,Array[I64]] // track all the values to be averaged
-	let _sets: col.Map[String,String] // track all the values
+	let _sets: col.Map[String,col.Set[String]] // track all the values
 
-	new create() =>
+	new create(flush_millis: U32 = 500, transport: StatsDTransport = StatsDTransportNop) =>
+		_flush_millis = flush_millis
+		_transport = transport
+
 		_gauges = col.Map[String,(Bool,I64)]()
 		_counters = col.Map[String,I64]()
 		_timers = col.Map[String,Array[I64]]()
-		_sets = col.Map[String,String]()
+		_sets = col.Map[String,col.Set[String]]()
 
-	fun val counter(bucket: String,
-			initial_value: I64 = 0, sample_ratio: F32 = 0.0): Counter val^ =>
-		(recover val Counter(this, bucket, sample_ratio) end)
-			.>now(initial_value)
+	// -- common
 
-	fun val timer(bucket: String,
-			initial_value: I64 = 0, time_unit: TimeUnit = MILLISECONDS,
-			sample_ratio: F32 = 0.0): Timer val^ =>
- 		(recover val Timer(this, bucket, time_unit, sample_ratio) end)
-			.>was(initial_value, time_unit)
+	be _flush(metric: Metric) =>
+		None
 
- 	fun val gauge(bucket: String,
-			initial_value: I64): Gauge val^ =>
- 		(recover val Gauge(this, bucket) end)
-			.>set(initial_value)
-
- 	fun val set(bucket: String): Set val^ =>
- 		recover val Set(this, bucket) end
+	// -- counters
 
 	be _post_counter_add(metric: Counter, value: I64) =>
 		None
+
+	// -- gauges
 
 	be _post_gauge_inc(metric: Gauge, value: I64) =>
 		None
@@ -148,8 +191,39 @@ actor StatsD
 	be _post_gauge_set(metric: Gauge, value: I64) =>
 		None
 
+	// -- sets
+
 	be _post_set_add(metric: Set, value: I64) =>
 		None
 
+	// -- timers
+
 	be _post_timer_log(metric: Timer, value: I64, unit: TimeUnit) =>
 		None
+
+class val StatsD
+	""" A factor for metrics. """
+
+	let _statsd: StatsDAccumulator
+
+	new val create(statsd: StatsDAccumulator = StatsDAccumulator) =>
+		_statsd = statsd
+
+	fun val counter(bucket: String,
+			initial_value: I64 = 0, sample_ratio: F32 = 0.0): Counter val^ =>
+		(recover val Counter(_statsd, bucket, sample_ratio) end)
+			.>now(initial_value)
+
+	fun val timer(bucket: String,
+			initial_value: I64 = 0, time_unit: TimeUnit = MILLISECONDS,
+			sample_ratio: F32 = 0.0): Timer val^ =>
+		(recover val Timer(_statsd, bucket, time_unit, sample_ratio) end)
+			.>was(initial_value, time_unit)
+
+	fun val gauge(bucket: String,
+			initial_value: I64): Gauge val^ =>
+		(recover val Gauge(_statsd, bucket) end)
+			.>set(initial_value)
+
+	fun val set(bucket: String): Set val^ =>
+		recover val Set(_statsd, bucket) end

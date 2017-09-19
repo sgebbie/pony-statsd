@@ -17,6 +17,9 @@ class iso _TestMetricCreation is UnitTest
 	fun name(): String => "metric creation"
 
 	fun apply(h: TestHelper) =>
+		let statsd: StatsD = StatsD
+		let client: StatsDClient = StatsDClient(statsd)
+		client.doStuff()
 		h.complete(true)
 
 actor StatsDClient
@@ -38,4 +41,3 @@ actor StatsDClient
  		timer.>was(10,SECONDS).>ms(10).>nanos(1000).>micros(100).>sec(50).>min(10).>hr(5).>day(1)
  		set.>add(5).>add(52)
 		
-
