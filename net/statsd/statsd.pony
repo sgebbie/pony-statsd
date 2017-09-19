@@ -141,11 +141,30 @@ primitive SetInclude
 
 type MetricOp is (CounterAdd | GaugeSet | GaugeInc | GaugeDec | TimerRecord | SetInclude)
 
+type Measurement is (String, MetricOp, I64, F32)
 
 interface tag StatsDTransport
 	""" An emitter of metrics. """
 
-	be emit(bucket: String, op: MetricOp, value: I64, sample_ratio: F32 = 0.0) => None
+	be emit(bucket: String, op: MetricOp, value: I64, sample_ratio: F32 = 0.0) =>
+		""" Buffer a measurement for transport.
+
+				It might be sent if the buffer is full.
+		"""
+		None
+
+	be emit_batch(batch: Array[Measurement] val) =>
+		""" Buffer all measurements for transport.
+
+				It might force a flush of earlier measurements first in order
+				to fit all of these measurements into one frame.
+		"""
+		// used to group gauge set=0 & set = negative into one frame
+		None
+
+	be flush() =>
+		""" Force the sending of all buffered measurements. """
+		None
 
 actor StatsDTransportNop is StatsDTransport
 
