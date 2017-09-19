@@ -9,4 +9,5 @@ actor Main is TestList
 
 	fun tag tests(test: PonyTest) =>
 		StatsDClientTests.make().tests(test)
+		StatsDFormatTests.make().tests(test)
 		StatsDUDPTests.make().tests(test)
