@@ -77,10 +77,11 @@ class iso _TestMetricAccumulate is UnitTest
 
 	fun apply(h: TestHelper) =>
 		h.long_test(1_000_000_000)
-		let acc: StatsDTransportArray = StatsDTransportArray
-		let timers: time.Timers = time.Timers
-		let statsd: StatsD = StatsD(StatsDAccumulator(where transport = acc, timers = timers))
-		let client: StatsDClient = StatsDClient(statsd)
+		// seems like a candidate for using 'with' for timers but not actually due to async calls
+		let timers = time.Timers
+		let acc = StatsDTransportArray
+		let statsd = StatsD(StatsDAccumulator(where transport = acc, timers = timers))
+		let client = StatsDClient(statsd)
 		client.doStuff({()(h,acc,_stringeq,timers) =>
 			statsd.flush({()(h,acc,_stringeq,timers) =>
 				// (but we might still get a timing issue between updates and flush)
@@ -92,8 +93,8 @@ class iso _TestMetricAccumulate is UnitTest
 					h.assert_true(ll.contains("my.set:5|s", _stringeq))
 					h.assert_true(ll.contains("my.set:52|s", _stringeq))
 					h.assert_true(ll.contains("my.timer:13132501|ms", _stringeq)) // see _TestTimeAvg
-					timers.dispose()
 					h.complete(true)
+					timers.dispose()
 				} val)
 			} val)
 		} val)
