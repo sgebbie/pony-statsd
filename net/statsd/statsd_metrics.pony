@@ -14,7 +14,7 @@ Within a batch local aggregation can be performed up to a given resolution.
 
 interface Bucket
 	fun bucket(): String
-	fun val flush()
+	fun val flush(completion: {()} val = {() => None} val)
 
 class val Counter
 """
@@ -33,7 +33,7 @@ Count -
 		_samples = sample_ratio
 
 	fun bucket(): String => _bucket
-	fun val flush() => _statsd._flush(this)
+	fun val flush(completion: {()} val = {() => None} val) => _statsd._flush(this, completion)
 
 	fun val now(value: I64) =>
 		_statsd._post_counter_add(this, value)
@@ -57,7 +57,7 @@ Duration -
 		_time_unit = time_unit
 
 	fun bucket(): String => _bucket
-	fun val flush() => _statsd._flush(this)
+	fun val flush(completion: {()} val = {() => None} val) => _statsd._flush(this, completion)
 
 	fun val was(value: I64, unit: TimeUnit) =>
 		// convert to the the configured time unit
@@ -87,7 +87,7 @@ Gauge -
 		_bucket = stats_bucket
 
 	fun bucket(): String => _bucket
-	fun val flush() => _statsd._flush(this)
+	fun val flush(completion: {()} val = {() => None} val) => _statsd._flush(this, completion)
 
 	fun val inc(value: I64) =>
 		_statsd._post_gauge_inc(this, value)
@@ -112,7 +112,7 @@ Set -
 		_bucket = stats_bucket
 
 	fun bucket(): String => _bucket
-	fun val flush() => _statsd._flush(this)
+	fun val flush(completion: {()} val = {() => None} val) => _statsd._flush(this, completion)
 
 	fun val add(value: I64) =>
 		_statsd._post_set_add(this, value)
@@ -141,10 +141,11 @@ type MetricOp is (CounterAdd | GaugeSet | GaugeInc | GaugeDec | TimerRecord | Se
 type Measurement is (String, MetricOp, I64, F32)
 
 primitive StatsDFormat
+	""" Format measurements according the statsd line protocol. """
+
 	fun apply(bucket: String, op: MetricOp, value: I64, sample_ratio: F32 = 0.0): String =>
 		// we use matching and precalculate the length to improve performance
 		match (bucket, op, value, sample_ratio)
-
 		// gauges
 		| (let b: String, let o: (GaugeSet) , let v: I64, _) if v >= 0 =>
 			recover val
@@ -217,5 +218,5 @@ primitive StatsDFormat
 				// if m.space() != space then return "~" end ; m
 			end
 		else
-			"?"
+			"unformattable." + bucket + ":1|c"
 		end
