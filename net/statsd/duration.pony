@@ -1,3 +1,8 @@
+/**
+ * Pony StatsD Library
+ * Copyright (c) 2017 - Stewart Gebbie. Licensed under the MIT licence.
+ * vim: set ts=2 sw=0:
+ */
 // FIXME in order to comply with the ISO calendar standard we should rather use 1 year = 31556952 seconds (i.e. 365.2425 days)
 
 primitive NANOSECONDS

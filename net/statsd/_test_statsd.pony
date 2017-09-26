@@ -1,3 +1,8 @@
+/**
+ * Pony StatsD Library
+ * Copyright (c) 2017 - Stewart Gebbie. Licensed under the MIT licence.
+ * vim: set ts=2 sw=0:
+ */
 use "ponytest"
 use "net"
 use time = "time"
@@ -45,7 +50,7 @@ class iso _TestCreateAndEmit is UnitTest
 			// capture in mock
 			let notify: UDPNotify iso = object iso is UDPNotify
 				var _count: U32 = 0
-				let _gauge: Gauge = statsd.gauge("test.gauge.bucket", 0)
+				let _gauge: Gauge = statsd.gauge("test.gauge.bucket")
 				let _set: Set = statsd.set("test.set.bucket")
 				fun ref not_listening(sock: UDPSocket ref) =>
 					h.fail("Server not able to listen")

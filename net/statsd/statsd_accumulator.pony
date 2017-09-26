@@ -1,3 +1,8 @@
+/**
+ * Pony StatsD Library
+ * Copyright (c) 2017 - Stewart Gebbie. Licensed under the MIT licence.
+ * vim: set ts=2 sw=0:
+ */
 use col = "collections"
 use time = "time"
 

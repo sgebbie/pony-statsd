@@ -1,3 +1,8 @@
+/**
+ * Pony StatsD Library
+ * Copyright (c) 2017 - Stewart Gebbie. Licensed under the MIT licence.
+ * vim: set ts=2 sw=0:
+ */
 """StatsD telemetry collection."""
 use time = "time"
 use "net"
@@ -35,7 +40,7 @@ class val StatsD
 		_statsd._flush(where completion = completion)
 
 	fun val gauge(bucket: String,
-			initial_value: I64): Gauge val^ =>
+			initial_value: I64 = 0): Gauge val^ =>
 		(recover val Gauge(_statsd, bucket) end)
 			.>set(initial_value)
 
