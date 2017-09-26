@@ -19,7 +19,10 @@ gauge.set(6)
 # Demo
 
 When the library is compiled along with the unit tests then there is a simple
-embedded demo. See: `_tests.pony :: StatsDDemo` and run as:
+embedded demo.
+
+See: `_tests.pony :: StatsDDemo` and run as:
+
 ```
 ./statsd demo
 ```
