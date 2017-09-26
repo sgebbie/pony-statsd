@@ -1,6 +1,13 @@
 primitive Completion
 	fun nop():{()} val => {() => None} val
 
+primitive StatsDTransportConstants
+	// https://github.com/etsy/statsd/blob/master/docs/metric_types.md
+	// payload sizes
+	fun fastEthernetMTU(): USize => 1432
+	fun gigbitEthernetMTU(): USize => 8932
+	fun commodityEthernetMTU(): USize => 512
+
 interface tag StatsDTransport
 	""" An emitter of metrics. """
 
@@ -9,8 +16,9 @@ interface tag StatsDTransport
 
 				It might be sent if the buffer is full.
 		"""
-		None
+		completion()
 
+/*
 	be emit_batch(batch: Array[Measurement] val) =>
 		""" Buffer all measurements for transport.
 
@@ -19,10 +27,13 @@ interface tag StatsDTransport
 		"""
 		// used to group gauge set=0 & set = negative into one frame
 		None
+*/
 
 	be flush(completion: {()} val = Completion.nop()) =>
 		""" Force the sending of all buffered measurements. """
 		completion()
+
+	be dispose() => None
 
 actor StatsDTransportNop is StatsDTransport
 
@@ -37,7 +48,9 @@ actor StatsDTransportArray is StatsDTransport
 	be emit(bucket: String, op: MetricOp, value: I64, sample_ratio: F32 = 0.0, completion: {()} val = Completion.nop()) =>
 		let l: String = StatsDFormat(bucket, op, value, sample_ratio)
 		_lines.push(l)
+		completion()
 
+/*
 	be emit_batch(batch: Array[Measurement] val) =>
 		for m in batch.values() do
 			match m
@@ -46,6 +59,7 @@ actor StatsDTransportArray is StatsDTransport
 				_lines.push(l)
 			end
 		end
+*/
 
 	be flush(completion: {()} val = Completion.nop()) =>
 		""" Force the sending of all buffered measurements. """

@@ -1,4 +1,5 @@
 use "ponytest"
+use "net"
 
 actor StatsDUDPTests is TestList
 
@@ -9,17 +10,94 @@ actor StatsDUDPTests is TestList
 		None
 
 	fun tag tests(test: PonyTest) =>
-		test(_TestMetricTransmit)
+		test(_TestCreateUDPTransport)
+		test(_TestTransmitUDP)
 
-class iso _TestMetricTransmit is UnitTest
-	"""Tests sending metrics via UDP."""
+class iso _TestCreateUDPTransport is UnitTest
+	"""Tests setup and teardown of UDP transport."""
 
-	fun name(): String => "metric send"
+	fun name(): String => "statsd:udpcreate"
 
 	fun apply(h: TestHelper) =>
-		// set up mock to receive UDP
-		// send metrics
-		// capture in mock
-		// test results
-		h.complete(true)
+		h.long_test(1_000_000_000)
+		try
+			// set up mock to receive UDP
+			let server: NetAddress = DNS(h.env.root as AmbientAuth, "localhost", "18125")(0)?
+			let acc: StatsDTransportUDP = StatsDTransportUDP(h.env.root as AmbientAuth, server)
+			// displose
+			acc.dispose()
+			h.complete(true)
+		else
+			h.complete(false)
+		end
 
+class iso _TestTransmitUDP is UnitTest
+	"""Tests sending via UDP transport."""
+
+	var _acc: (StatsDTransportUDP | None)
+	var _mock: (UDPSocket | None)
+
+	new iso create() =>
+		_acc = None
+		_mock = None
+
+	fun name(): String => "statsd:udpsend"
+
+	fun tear_down(h: TestHelper) =>
+		// dispose
+		match _acc
+		| let f: StatsDTransportUDP => f.dispose()
+		end
+		match _mock
+		| let f: UDPSocket => f.dispose()
+		end
+
+	fun ref apply(h: TestHelper) =>
+		h.long_test(1_000_000_000)
+		try
+			// set up client
+			let level: {(USize)} val = {(used: USize) => None /* h.env.out.print("used = " + used.string()) */ } val
+			let server = DNS(h.env.root as AmbientAuth, "localhost", "18125")(0)?
+			let acc = StatsDTransportUDP(h.env.root as AmbientAuth, server
+									where level = consume level)
+			_acc = acc
+
+			// capture in mock
+			let notify: UDPNotify iso = object iso is UDPNotify
+				var _count: U32 = 0
+				fun ref not_listening(sock: UDPSocket ref) =>
+					h.fail("Server not able to listen")
+
+				fun ref received(sock: UDPSocket ref, data: Array[U8] iso, from: NetAddress) =>
+					// test results
+					let text = String.from_array(consume data)
+					//h.env.out.print(">>>"+text+"<<<")
+					h.assert_true(text.size() > 100)
+					_count = _count + 1
+					if _count >= 2 then _success() end
+
+				fun ref _success() => h.complete(true)
+
+				fun ref listening(sock: UDPSocket ref) =>
+					// make sure that the mock is listening before sending test traffic
+					_send_test_traffic()
+
+				fun ref _send_test_traffic() =>
+					// send metrics (enough to fill two packets)
+					var i: U32 = 0
+					while i < 100 do
+						acc.emit("test.bucket", GaugeSet, i.i64())
+						i = i + 1
+					end
+					acc.flush()
+			end
+
+			// set up mock to receive UDP
+			// 'ngrep -d any port 18125'
+			let mock: UDPSocket = UDPSocket(h.env.root as AmbientAuth
+				, consume notify, "localhost", "18125", StatsDTransportConstants.fastEthernetMTU())
+			_mock = mock
+
+		else
+			h.complete(false)
+		end

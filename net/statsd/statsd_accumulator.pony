@@ -21,10 +21,10 @@ actor StatsDAccumulator
 	let _transport: StatsDTransport // gateway to transport data out to external tooling
 	let _flush_millis: U64 // time between flushing accumulated metrics to the transport layer
 
-	let _gauges: col.Map[String,(Bool, I64)] // track the sum of 'inc/dec' and if 'set' was used (note, if negative after 'set' then we need to emit a "set to zero" before sending the decrement. But care must be taken to ensure that this is in the same packet so that we accidentally processs the set=0 after the decrement.
-	let _counters: col.Map[String,I64] // simply track the sum
-	let _timers: col.Map[String,Array[I64]] // track all the values to be averaged
-	let _sets: col.Map[String,col.Set[I64]] // track all the values
+	embed _gauges: col.Map[String,(Bool, I64)] // track the sum of 'inc/dec' and if 'set' was used (note, if negative after 'set' then we need to emit a "set to zero" before sending the decrement. But care must be taken to ensure that this is in the same packet so that we accidentally processs the set=0 after the decrement.
+	embed _counters: col.Map[String,I64] // simply track the sum
+	embed _timers: col.Map[String,Array[I64]] // track all the values to be averaged
+	embed _sets: col.Map[String,col.Set[I64]] // track all the values
 
 	new create(transport: StatsDTransport = StatsDTransportNop, flush_millis: U64 = 500, timers: (time.Timers | None) = None) =>
 		_flush_millis = flush_millis

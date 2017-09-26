@@ -95,6 +95,7 @@ class iso _TestMetricAccumulate is UnitTest
 					h.assert_true(ll.contains("my.timer:13132501|ms", _stringeq)) // see _TestTimeAvg
 					h.complete(true)
 					timers.dispose()
+					acc.dispose()
 				} val)
 			} val)
 		} val)
