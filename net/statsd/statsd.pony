@@ -40,14 +40,21 @@ class val StatsD
 		_statsd._flush(where completion = completion)
 
 	fun val gauge(bucket: String,
-			initial_value: I64 = 0): Gauge val^ =>
-		(recover val Gauge(_statsd, bucket) end)
-			.>set(initial_value)
+			initial_value: (I64 | None) = None): Gauge val^ =>
+		let m = (recover val Gauge(_statsd, bucket) end)
+		// default to not setting an initial value so that we don't bounce the value on restart
+		match initial_value
+		| let iv: I64 => m.set(iv)
+		end
+		m
 
 	fun val counter(bucket: String,
-			initial_value: I64 = 0, sample_ratio: F32 = 0.0): Counter val^ =>
-		(recover val Counter(_statsd, bucket, sample_ratio) end)
-			.>now(initial_value)
+			initial_value: (I64 | None) = None, sample_ratio: F32 = 0.0): Counter val^ =>
+		let m = (recover val Counter(_statsd, bucket, sample_ratio) end)
+		match initial_value
+		| let iv: I64 => m.now(iv)
+		end
+		m
 
 	fun val timer(bucket: String, time_unit: TimeUnit = MILLISECONDS,
 			sample_ratio: F32 = 0.0): Timer val^ =>
