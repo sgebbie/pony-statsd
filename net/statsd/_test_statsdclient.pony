@@ -64,7 +64,7 @@ class iso _TestMetricCreation is UnitTest
 
 	fun apply(h: TestHelper) =>
 		h.long_test(1_000_000_000)
-		let statsd: StatsD = StatsD
+		let statsd: StatsD = StatsD.create_acc()
 		let client: StatsDClient = StatsDClient(statsd)
 		client.doStuff({() => h.complete(true) } val)
 
@@ -80,7 +80,7 @@ class iso _TestMetricAccumulate is UnitTest
 		// seems like a candidate for using 'with' for timers but not actually due to async calls
 		let timers = time.Timers
 		let acc = StatsDTransportArray
-		let statsd = StatsD(StatsDAccumulator(where transport = acc, timers = timers))
+		let statsd = StatsD.create_acc(StatsDAccumulator(where transport = acc, timers = timers))
 		let client = StatsDClient(statsd)
 		client.doStuff({()(h,acc,_stringeq,timers) =>
 			statsd.flush({()(h,acc,_stringeq,timers) =>

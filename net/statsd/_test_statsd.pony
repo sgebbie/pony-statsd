@@ -16,24 +16,19 @@ actor StatsDTests is TestList
 class iso _TestCreateAndEmit is UnitTest
 	"""Tests sending via UDP transport."""
 
-	var _timers: (time.Timers | None)
-	var _trans: (StatsDTransportUDP | None)
+	var _statsd: (StatsD | None)
 	var _mock: (UDPSocket | None)
 
 	new iso create() =>
-		_timers = None
-		_trans = None
+		_statsd = None
 		_mock = None
 
 	fun name(): String => "statsd:lifecycle"
 
 	fun tear_down(h: TestHelper) =>
 		// dispose
-		match _timers
-		| let f: time.Timers => f.dispose()
-		end
-		match _trans
-		| let f: StatsDTransportUDP => f.dispose()
+		match _statsd
+		| let f: StatsD => f.dispose()
 		end
 		match _mock
 		| let f: UDPSocket => f.dispose()
@@ -44,12 +39,8 @@ class iso _TestCreateAndEmit is UnitTest
 		try
 			// set up client
 			let port = "18126"
-			let server = DNS(h.env.root as AmbientAuth, "localhost", port)(0)?
-			let trans = StatsDTransportUDP(h.env.root as AmbientAuth, server)
-			let timers = time.Timers
-			_timers = timers // record for teardown
-			let statsd: StatsD = StatsD(StatsDAccumulator(where transport = trans, timers = timers))
-			_trans = trans // record for teardown
+			let statsd: StatsD = StatsD.create(h.env.root as AmbientAuth, "localhost", port)?
+			_statsd = statsd // record for teardown
 
 			// capture in mock
 			let notify: UDPNotify iso = object iso is UDPNotify
