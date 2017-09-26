@@ -11,3 +11,4 @@ actor Main is TestList
 		StatsDClientTests.make().tests(test)
 		StatsDFormatTests.make().tests(test)
 		StatsDUDPTests.make().tests(test)
+		StatsDTests.make().tests(test)

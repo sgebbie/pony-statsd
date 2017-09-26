@@ -4,7 +4,14 @@ class StatsDTransportUDPNotifier is UDPNotify
 	fun ref not_listening(sock: UDPSocket ref) => None
 
 actor StatsDTransportUDP
-	""" A UDP emitter of metrics. """
+	"""
+	A UDP emitter of metrics.
+
+	```
+	let udp_transport = StatsDTransportUDP(env.root as AmbientAuth
+												, DNS(env.root as AmbientAuth, "localhost", "8125")(0)?)
+	```
+	"""
 
 	let _nop_completion: {()} val
 	let _new_line: U8
