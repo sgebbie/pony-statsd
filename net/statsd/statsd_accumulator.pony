@@ -34,7 +34,7 @@ actor StatsDAccumulator
 	embed _timers: col.Map[String,Array[I64]] // track all the values to be averaged
 	embed _sets: col.Map[String,col.Set[I64]] // track all the values
 
-	new create(transport: StatsDTransport = StatsDTransportNop, flush_millis: U64 = 500, timers: (time.Timers | None) = None) =>
+	new create(transport: StatsDTransport = StatsDTransportNop, flush_millis: U64 = 450, timers: (time.Timers | None) = None) =>
 		_flush_millis = flush_millis
 		_transport = transport
 
@@ -66,6 +66,7 @@ actor StatsDAccumulator
 
 	be _flush(metric: (Metric | None) = None, completion: {()} val = Completion.nop()) =>
 		if _closed then completion(); return end
+
 		// gauges
 		for pair in _gauges.pairs() do
 			(let bucket: String, let gauge: (Bool, I64)) = pair
@@ -80,11 +81,13 @@ actor StatsDAccumulator
 				end
 			end
 		end
+
 		// counters
 		for pair in _counters.pairs() do
 			(let bucket: String, let counter: I64) = pair
 			_transport.emit(bucket, CounterAdd, counter)
 		end
+
 		// timers
 		for pair in _timers.pairs() do
 			(let bucket: String, let times: Array[I64]) = pair
@@ -94,6 +97,7 @@ actor StatsDAccumulator
 			end
 			_transport.emit(bucket, TimerRecord, total / times.size().i64())
 		end
+
 		// sets
 		for pair in _sets.pairs() do
 			(let bucket: String, let set: col.Set[I64]) = pair
@@ -101,6 +105,14 @@ actor StatsDAccumulator
 				_transport.emit(bucket, SetInclude, v)
 			end
 		end
+
+		// clear all holders
+		_gauges.clear()
+		_counters.clear()
+		_timers.clear()
+		_sets.clear()
+
+		// flush the transport layer
 		_transport.flush(completion)
 
 	// -- counters
