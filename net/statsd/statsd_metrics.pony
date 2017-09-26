@@ -6,7 +6,6 @@
 use col = "collections"
 
 /*
-
 See: https://github.com/etsy/statsd/blob/master/docs/metric_types.md
 
 Simply group into batches that fit in a given UDP packet and separate with \n
@@ -45,7 +44,7 @@ Count -
 class val Timer
 """
 Duration -
-	"%s:%d|ms" (bucket, value) or
+  "%s:%d|ms" (bucket, value) or
   "%s:%d|ms|@%f" (bucket, value, sample-ratio)
 """
 
