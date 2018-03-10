@@ -17,9 +17,10 @@ interface tag StatsDTransport
 	""" An emitter of metrics. """
 
 	be emit(bucket: String, op: MetricOp, value: I64, sample_ratio: F32 = 0.0, completion: {()} val = Completion.nop()) =>
-		""" Buffer a measurement for transport.
+		"""
+		Buffer a measurement for transport.
 
-				It might be sent if the buffer is full.
+		It might be sent if the buffer is full.
 		"""
 		completion()
 
