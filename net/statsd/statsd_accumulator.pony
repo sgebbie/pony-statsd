@@ -119,41 +119,33 @@ actor StatsDAccumulator
 
 	be _post_counter_add(metric: Counter, value: I64) =>
 		if _closed then return end
-		try
-			_counters.upsert(metric.bucket(), value, {
-				(old: I64, cur: I64): I64 => old + cur
-			})?
-		end
+		_counters.upsert(metric.bucket(), value, {
+			(old: I64, cur: I64): I64 => old + cur
+		})
 
 	// -- gauges
 
 	be _post_gauge_inc(metric: Gauge, value: I64) =>
 		if _closed then return end
-		try
-			_gauges.upsert(metric.bucket(), (false, value), {
-				(old: (Bool, I64), cur: (Bool, I64)): (Bool, I64) =>
-					(let os: Bool, let ov: I64) = old
-					(let cs: Bool, let cv: I64) = cur
-					(os or cs, ov + cv)
-			})?
-		end
+		_gauges.upsert(metric.bucket(), (false, value), {
+			(old: (Bool, I64), cur: (Bool, I64)): (Bool, I64) =>
+				(let os: Bool, let ov: I64) = old
+				(let cs: Bool, let cv: I64) = cur
+				(os or cs, ov + cv)
+		})
 
 	be _post_gauge_dec(metric: Gauge, value: I64) =>
 		if _closed then return end
-		try
-			_gauges.upsert(metric.bucket(), (false, value), {
-				(old: (Bool, I64), cur: (Bool, I64)): (Bool, I64) =>
-					(let os: Bool, let ov: I64) = old
-					(let cs: Bool, let cv: I64) = cur
-					(os or cs, ov - cv)
-			})?
-		end
+		_gauges.upsert(metric.bucket(), (false, value), {
+			(old: (Bool, I64), cur: (Bool, I64)): (Bool, I64) =>
+				(let os: Bool, let ov: I64) = old
+				(let cs: Bool, let cv: I64) = cur
+				(os or cs, ov - cv)
+		})
 
 	be _post_gauge_set(metric: Gauge, value: I64) =>
 		if _closed then return end
-		try
-			_gauges.insert(metric.bucket(), (true, value))?
-		end
+		_gauges.insert(metric.bucket(), (true, value))
 
 	// -- timers
 
