@@ -34,19 +34,19 @@ pipeline {
 		}
 		unstable {
 			echo 'I am unstable :/'
-			mail to: "{env.PONY_STATSD_BUILD_EMAIL}",
+			mail to: "${env.PONY_STATSD_BUILD_EMAIL}",
 			  subject: "Pipeline unstable: ${currentBuild.fullDisplayName}",
 			  body: "The build is unstable: ${env.BUILD_URL}"
 		}
 		failure {
 			echo 'I failed :('
-			mail to: "{env.PONY_STATSD_BUILD_EMAIL}",
+			mail to: "${env.PONY_STATSD_BUILD_EMAIL}",
 			  subject: "Pipeline failed: ${currentBuild.fullDisplayName}",
 			  body: "The build has failed: ${env.BUILD_URL}"
 		}
 		changed {
 			echo 'Things were different before...'
-			mail to: "{env.PONY_STATSD_BUILD_EMAIL}",
+			mail to: "${env.PONY_STATSD_BUILD_EMAIL}",
 			  subject: "Pipeline status changed: ${currentBuild.fullDisplayName} now ${currentBuild.result}",
 			  body: "The status of the build has changed: ${env.BUILD_URL}"
 		}
