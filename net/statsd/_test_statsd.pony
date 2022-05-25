@@ -44,7 +44,7 @@ class iso _TestCreateAndEmit is UnitTest
 		try
 			// set up client
 			let port = "18126"
-			let statsd: StatsD = StatsD.create(h.env.root as AmbientAuth, "localhost", port)?
+			let statsd: StatsD = StatsD.create(UDPAuth(h.env.root), DNSAuth(h.env.root), "localhost", port)?
 			_statsd = statsd // record for teardown
 
 			// capture in mock
@@ -81,7 +81,7 @@ class iso _TestCreateAndEmit is UnitTest
 
 			// set up mock server socket to receive UDP
 			// 'ngrep -d any port 18125'
-			let mock: UDPSocket = UDPSocket(h.env.root as AmbientAuth
+			let mock: UDPSocket = UDPSocket(UDPAuth(h.env.root)
 				, consume notify, "localhost", port, StatsDTransportConstants.fastEthernetMTU())
 			_mock = mock // record for teardown
 

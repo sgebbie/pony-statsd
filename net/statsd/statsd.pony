@@ -20,17 +20,17 @@ class val StatsD
 	new val create_trans(transport: StatsDTransport, timers: time.Timers = time.Timers) =>
 		_statsd = StatsDAccumulator(where transport = transport, timers = timers)
 
-	new val create_server(auth: UDPSocketAuth
+	new val create_server(auth: UDPAuth
 									, server: NetAddress
 									, timers: time.Timers = time.Timers) =>
 		let transport = StatsDTransportUDP(auth, server)
 		_statsd = StatsDAccumulator(where transport = transport, timers = timers)
 
-	new val create(auth: (UDPSocketAuth & DNSLookupAuth)
+	new val create(udp_auth: UDPAuth, dns_auth: DNSAuth
 									, host: String = "localhost", service: String = "8125"
 									, timers: time.Timers = time.Timers)? =>
-		let server = DNS(auth, host, service)(0)?
-		let transport = StatsDTransportUDP(auth, server)
+		let server = DNS(dns_auth, host, service)(0)?
+		let transport = StatsDTransportUDP(udp_auth, server)
 		_statsd = StatsDAccumulator(where transport = transport, timers = timers)
 
 	fun val dispose() =>

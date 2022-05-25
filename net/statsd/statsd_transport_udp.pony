@@ -29,7 +29,7 @@ actor StatsDTransportUDP
 	// a single packet however, each ByteSeq in ByteSeqIter is sent as a separate UDP packet :(
 	var _buf: String iso
 
-	new create(auth: UDPSocketAuth, server: NetAddress, mtu: USize = StatsDTransportConstants.fastEthernetMTU(), level: {(USize)} val = {(l:USize) => None} val) =>
+	new create(auth: UDPAuth, server: NetAddress, mtu: USize = StatsDTransportConstants.fastEthernetMTU(), level: {(USize)} val = {(l:USize) => None} val) =>
 		_level = consume level
 		_new_line = '\n'
 		_nop_completion = Completion.nop()
