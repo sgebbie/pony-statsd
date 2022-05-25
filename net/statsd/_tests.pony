@@ -3,8 +3,9 @@
  * Copyright (c) 2017 - Stewart Gebbie. Licensed under the MIT licence.
  * vim: set ts=2 sw=0:
  */
-use "ponytest"
+use "pony_test"
 use time="time"
+use "net"
 
 actor Main is TestList
 	new create(env: Env) =>
@@ -60,7 +61,7 @@ actor StatsDDemo
 		_env = env
 		timers = time.Timers
 		(statsd, let run: Bool) = try
-			(StatsD(env.root as AmbientAuth)?, true)
+			(StatsD(UDPAuth(env.root), DNSAuth(env.root))?, true)
 		else
 			(StatsD.create_acc(), false)
 		end

@@ -3,7 +3,7 @@
  * Copyright (c) 2017 - Stewart Gebbie. Licensed under the MIT licence.
  * vim: set ts=2 sw=0:
  */
-use "ponytest"
+use "pony_test"
 use "net"
 use time = "time"
 
@@ -44,7 +44,7 @@ class iso _TestCreateAndEmit is UnitTest
 		try
 			// set up client
 			let port = "18126"
-			let statsd: StatsD = StatsD.create(h.env.root as AmbientAuth, "localhost", port)?
+			let statsd: StatsD = StatsD.create(UDPAuth(h.env.root), DNSAuth(h.env.root), "localhost", port)?
 			_statsd = statsd // record for teardown
 
 			// capture in mock
@@ -81,7 +81,7 @@ class iso _TestCreateAndEmit is UnitTest
 
 			// set up mock server socket to receive UDP
 			// 'ngrep -d any port 18125'
-			let mock: UDPSocket = UDPSocket(h.env.root as AmbientAuth
+			let mock: UDPSocket = UDPSocket(UDPAuth(h.env.root)
 				, consume notify, "localhost", port, StatsDTransportConstants.fastEthernetMTU())
 			_mock = mock // record for teardown
 

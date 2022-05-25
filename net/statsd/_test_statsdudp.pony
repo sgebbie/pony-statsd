@@ -3,7 +3,7 @@
  * Copyright (c) 2017 - Stewart Gebbie. Licensed under the MIT licence.
  * vim: set ts=2 sw=0:
  */
-use "ponytest"
+use "pony_test"
 use "net"
 
 actor StatsDUDPTests is TestList
@@ -27,8 +27,8 @@ class iso _TestCreateUDPTransport is UnitTest
 		h.long_test(1_000_000_000)
 		try
 			// set up mock to receive UDP
-			let server: NetAddress = DNS(h.env.root as AmbientAuth, "localhost", "18125")(0)?
-			let trans: StatsDTransportUDP = StatsDTransportUDP(h.env.root as AmbientAuth, server)
+			let server: NetAddress = DNS(DNSAuth(h.env.root), "localhost", "18125")(0)?
+			let trans: StatsDTransportUDP = StatsDTransportUDP(UDPAuth(h.env.root), server)
 			// displose
 			trans.dispose()
 			h.complete(true)
@@ -62,8 +62,8 @@ class iso _TestTransmitUDP is UnitTest
 		try
 			// set up client
 			let level: {(USize)} val = {(used: USize) => None /* h.env.out.print("used = " + used.string()) */ } val
-			let server = DNS(h.env.root as AmbientAuth, "localhost", "18125")(0)?
-			let trans = StatsDTransportUDP(h.env.root as AmbientAuth, server where level = consume level)
+			let server = DNS(DNSAuth(h.env.root), "localhost", "18125")(0)?
+			let trans = StatsDTransportUDP(UDPAuth(h.env.root), server where level = consume level)
 			_trans = trans // record for teardown
 
 			// capture in mock
@@ -100,7 +100,7 @@ class iso _TestTransmitUDP is UnitTest
 
 			// set up mock server socket to receive UDP
 			// 'ngrep -d any port 18125'
-			let mock: UDPSocket = UDPSocket(h.env.root as AmbientAuth
+			let mock: UDPSocket = UDPSocket(UDPAuth(h.env.root)
 				, consume notify, "localhost", "18125", StatsDTransportConstants.fastEthernetMTU())
 			_mock = mock // record for teardown
 
